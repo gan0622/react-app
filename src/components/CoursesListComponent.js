@@ -1,39 +1,76 @@
-import React from 'react';
+import React from "react";
 import CourseRowComponent from "./CourseRowComponent";
+import {findAllCourses, updateCourse, deleteCourse, createCourse} from "../services/CourseService";
 
+class CourseListComponent extends React.Component {
 
-const course = [
-    {
-        _id:"123",
-        title:"CS5200",
-        owner:"haha",
-        lastOpened:"yesterday"
-    },
-    {
-        _id:"234",
-        title:"CS5212",
-        owner:"aha",
-        lastOpened:"today"
-    },
-    {
-        _id:"234",
-        title:"CS5213",
-        owner:"ah",
-        lastOpened:"today"
+    state = {
+        courses: [],
+        courseBeingEdited: {}
     }
-]
 
+    componentDidMount() {
+        findAllCourses()
+            .then(courses => {
+                this.setState({
+                    courses: courses
+                })
+            })
+    }
 
-const CoursesListComponent = ({student,term}) =>
-    <div>
-     <h1>Course List (For {student} ) {term}</h1>
-        <table className="table">
-            {
-                course.map(item =>
-                     <CourseRowComponent item={item}/>
-                )
-            }
-        </table>
-    </div>
+    deleteCourse = (course) => {
+        deleteCourse(course._id)
+            .then(status => this.setState(prevState =>({
+                    courses: prevState.courses.filter(c => c._id !== course._id)
+                })
+            ))
+            .catch(error => {
 
-export default CoursesListComponent
+            })
+    }
+
+    addCourse = () => {
+        const newCourse = {
+            title: "New Course",
+            owner: "me",
+            modified: (new Date()).toDateString()
+        }
+
+        createCourse(newCourse)
+            .then(actualCourse => this.setState(prevState => ({
+                courses: [
+                    ...prevState.courses, actualCourse
+                ]
+            })))
+    }
+
+    editCourse = (course) => {
+        this.setState({
+            courseBeingEdited: course
+        })
+    }
+
+    render() {
+        return (
+            <div>
+                <h1>Course List (For {this.props.student}) {this.props.term}</h1>
+                <table className="table">
+                    {
+                        this.state.courses.map(course =>
+                            <CourseRowComponent
+                                deleteCourse={this.deleteCourse}
+                                course={course}/>
+                        )
+                    }
+                </table>
+                <button
+                    onClick={this.addCourse}
+                    className="btn btn-success">
+                    Add Course
+                </button>
+            </div>
+        );
+    }
+}
+
+export default CourseListComponent
